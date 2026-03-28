@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+python-dotenv
+pymongo
+passlib[bcrypt]
+python-jose
+google-generativeai
+streamlit
+requests
+plotly
+pyttsx3
+fpdf
+gtts
