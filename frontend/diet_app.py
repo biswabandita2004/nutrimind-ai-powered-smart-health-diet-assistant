@@ -2,8 +2,10 @@ import streamlit as st
 import requests
 import re
 import plotly.express as px
-import pyttsx3
+# import pyttsx3
 from fpdf import FPDF
+from gtts import gTTS
+import base64
 
 API_URL = "https://nutrimind-ai-powered-smart-health-diet.onrender.com"
 
@@ -22,10 +24,10 @@ def clean_text(text):
     text = re.sub(r'\n+', ' ', text)
     return text.strip()
 
-if "engine" not in st.session_state:
-    engine = pyttsx3.init()
-    engine.setProperty('rate', 180)
-    st.session_state.engine = engine
+# if "engine" not in st.session_state:
+#     engine = pyttsx3.init()
+#     engine.setProperty('rate', 180)
+#     st.session_state.engine = engine
 
 st.sidebar.title("🔐 Authentication")
 menu = st.sidebar.selectbox("Select", ["Login", "Signup"])
@@ -113,14 +115,19 @@ if output:
     st.markdown("## 🥗 Your Diet Plan")
     st.write(output)
 
+
 if st.button("🔊 Speak Diet Plan"):
     if output:
-        engine = st.session_state.engine
-        engine.say(output)
-        engine.runAndWait()
+        tts = gTTS(output)
+        tts.save("diet.mp3")
+
+        with open("diet.mp3", "rb") as f:
+            audio_bytes = f.read()
+            st.audio(audio_bytes, format="audio/mp3")
     else:
         st.warning("No diet plan available to speak.")
 
+        
 st.subheader("💬 Ask Nutrition Bot")
 
 if "chat_reply" not in st.session_state:
