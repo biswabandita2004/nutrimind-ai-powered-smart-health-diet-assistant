@@ -47,7 +47,7 @@ README.md
 
 ## ⚙️ Installation
 ### Clone the repository
-git clone https://github.com/your-username/nutrimind.git
+git clone https://github.com/biswabandita2004/nutrimind.git
 ### Backend Setup
 cd backend
 pip install -r requirements.txt
