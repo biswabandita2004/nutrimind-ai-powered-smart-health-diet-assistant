@@ -14,9 +14,10 @@ st.set_page_config(page_title="AI Diet Planner", page_icon="🥗", layout="wide"
 def safe_json(res):
     try:
         return res.json()
-    except:
+    except Exception:
         st.error("❌ Backend error")
-        st.write(res.text)
+        st.write("Status Code:", res.status_code)
+        st.write("Response Text:", res.text)
         return None
 
 def clean_text(text):
@@ -53,18 +54,18 @@ elif menu == "Login":
     password = st.sidebar.text_input("Password", type="password")
 
     if st.sidebar.button("Login"):
-        res = requests.post(f"{API_URL}/login", json={
-            "email": email,
-            "password": password
-        })
+        res = requests.post(
+            f"{API_URL}/login",
+            json={"email": email, "password": password}
+        )
 
         data = safe_json(res)
 
-        if data and "access_token" in data:
+        if res.status_code == 200 and data and "access_token" in data:
             st.session_state["token"] = data["access_token"]
             st.sidebar.success("Login successful ✅")
         else:
-            st.sidebar.error("Login failed ❌")
+            st.sidebar.error(f"Login failed ❌ {data}")
 
 if "token" not in st.session_state:
     st.warning("⚠️ Please login first")
@@ -127,7 +128,7 @@ if st.button("🔊 Speak Diet Plan"):
     else:
         st.warning("No diet plan available to speak.")
 
-        
+
 st.subheader("💬 Ask Nutrition Bot")
 
 if "chat_reply" not in st.session_state:

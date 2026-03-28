@@ -41,51 +41,81 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # -------------------- ROUTES --------------------
 
+
+def normalize_password(password: str) -> str:
+    if not isinstance(password, str):
+        password = str(password)
+    return password.encode("utf-8")[:72].decode("utf-8", errors="ignore")
+
+
 @app.get("/")
 def home():
     return {"message": "Backend is running 🚀"}
 
 # -------------------- SIGNUP --------------------
+
 @app.post("/signup")
 def signup(data: dict):
-    password = data["password"][:72]  # ✅ FIX
+    try:
+        email = data.get("email", "").strip()
+        name = data.get("name", "").strip()
+        raw_password = data.get("password", "")
 
-    if users_collection.find_one({"email": data["email"]}):
-        return {"error": "User already exists"}
+        password = normalize_password(raw_password)
 
-    hashed_password = pwd_context.hash(password)
+        if users_collection.find_one({"email": email}):
+            return {"error": "User already exists"}
 
-    users_collection.insert_one({
-        "name": data["name"],
-        "email": data["email"],
-        "password": hashed_password
-    })
+        hashed_password = pwd_context.hash(password)
 
-    return {"message": "User created successfully"}
+        users_collection.insert_one({
+            "name": name,
+            "email": email,
+            "password": hashed_password
+        })
 
+        return {"message": "User created successfully"}
+
+    except Exception as e:
+        print("SIGNUP ERROR:", str(e))
+        return {"error": str(e)}
+    
+    
 # -------------------- LOGIN --------------------
 @app.post("/login")
 def login(data: dict):
-    password = data["password"][:72]  # ✅ FIX
+    try:
+        email = data.get("email", "").strip()
+        raw_password = data.get("password", "")
 
-    user = users_collection.find_one({"email": data["email"]})
+        password = normalize_password(raw_password)
 
-    if not user:
-        return {"error": "User not found"}
+        user = users_collection.find_one({"email": email})
 
-    if not pwd_context.verify(password, user["password"]):
-        return {"error": "Wrong password"}
+        if not user:
+            return {"error": "User not found"}
 
-    token = jwt.encode(
-        {
-            "email": user["email"],
-            "exp": datetime.utcnow() + timedelta(hours=1)
-        },
-        SECRET_KEY,
-        algorithm=ALGORITHM
-    )
+        stored_password = user.get("password")
+        if not stored_password:
+            return {"error": "Password not found"}
 
-    return {"access_token": token}
+        if not pwd_context.verify(password, stored_password):
+            return {"error": "Wrong password"}
+
+        token = jwt.encode(
+            {
+                "email": user["email"],
+                "exp": datetime.utcnow() + timedelta(hours=1)
+            },
+            SECRET_KEY,
+            algorithm=ALGORITHM
+        )
+
+        return {"access_token": token}
+
+    except Exception as e:
+        print("LOGIN ERROR:", str(e))
+        return {"error": str(e)}
 
 # -------------------- GENERATE DIET --------------------
 @app.post("/generate-diet")
